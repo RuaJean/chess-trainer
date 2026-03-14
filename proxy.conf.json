@@ -1,0 +1,8 @@
+{
+  "/lichess-api/*": {
+    "target": "https://lichess.org",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/lichess-api": "/api" }
+  }
+}

@@ -1,0 +1,13 @@
+@use 'variables' as *;
+
+// Chessground CSS is imported through angular.json styles array.
+// Additional overrides below.
+
+cg-board {
+  background-color: $board-dark;
+}
+
+.cg-wrap {
+  width: 100%;
+  height: 100%;
+}

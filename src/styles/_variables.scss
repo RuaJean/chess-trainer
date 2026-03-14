@@ -1,0 +1,33 @@
+// Lichess-inspired color palette
+$bg-dark: #161512;
+$bg-main: #302e2c;
+$bg-light: #3d3a37;
+$bg-card: #262421;
+$bg-hover: #3d3a37;
+
+$text-primary: #bababa;
+$text-bright: #e0e0e0;
+$text-dim: #8a8886;
+$text-link: #bf811d;
+
+$accent-primary: #bf811d;
+$accent-secondary: #629924;
+$accent-danger: #ac3333;
+
+$board-light: #f0d9b5;
+$board-dark: #b58863;
+$board-highlight: rgba(155, 199, 0, 0.41);
+$board-selected: rgba(20, 85, 30, 0.5);
+
+$clock-active: #629924;
+$clock-low: #ac3333;
+$clock-bg: #1a1917;
+
+$sidebar-width: 220px;
+$board-size: min(calc(100vh - 60px), calc(100vw - 600px));
+
+$font-main: 'Noto Sans', sans-serif;
+$font-mono: 'Roboto Mono', monospace;
+
+$radius: 4px;
+$transition: 150ms ease;
