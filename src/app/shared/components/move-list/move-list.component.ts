@@ -10,6 +10,7 @@ import {
   AfterViewChecked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export interface MoveEntry {
   moveNumber: number;
@@ -24,7 +25,7 @@ export interface MoveEntry {
 @Component({
   selector: 'app-move-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="move-list-container">
       <div class="moves-scroll" #scrollContainer>
@@ -54,10 +55,10 @@ export interface MoveEntry {
         </div>
       </div>
       <div class="nav-buttons">
-        <button class="btn-icon" (click)="goToStart()" title="Start">⏮</button>
-        <button class="btn-icon" (click)="goBack()" title="Back">◀</button>
-        <button class="btn-icon" (click)="goForward()" title="Forward">▶</button>
-        <button class="btn-icon" (click)="goToEnd()" title="End">⏭</button>
+        <button class="btn-icon" (click)="goToStart()" [title]="'moves.start' | translate">⏮</button>
+        <button class="btn-icon" (click)="goBack()" [title]="'moves.back' | translate">◀</button>
+        <button class="btn-icon" (click)="goForward()" [title]="'moves.forward' | translate">▶</button>
+        <button class="btn-icon" (click)="goToEnd()" [title]="'moves.end' | translate">⏭</button>
       </div>
     </div>
   `,

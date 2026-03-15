@@ -6,28 +6,30 @@ import { DatabaseService } from '../../core/services/database.service';
 import { PgnService } from '../../core/services/pgn.service';
 import { LichessApiService, LichessImportResult } from '../../core/services/lichess-api.service';
 import { Game, Collection } from '../../models/game.model';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-games-library',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="library-container">
       <div class="library-header">
-        <h1>Game Library</h1>
+        <h1>{{ 'library.title' | translate }}</h1>
         <div class="header-actions">
           <label class="btn btn-secondary">
-            Import PGN
+            {{ 'library.importPgn' | translate }}
             <input type="file" accept=".pgn" (change)="importPgnFile($event)" hidden>
           </label>
           <button class="btn btn-secondary" (click)="showPgnPaste = !showPgnPaste">
-            Paste PGN
+            {{ 'library.pastePgn' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="showLichessImport = !showLichessImport">
-            Lichess Import
+            {{ 'library.lichessImport' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="showNewCollection = !showNewCollection">
-            New Collection
+            {{ 'library.newCollection' | translate }}
           </button>
         </div>
       </div>
@@ -38,7 +40,7 @@ import { Game, Collection } from '../../models/game.model';
           <div class="coll-item" [class.active]="selectedCollectionId === null"
                (click)="selectCollection(null)">
             <span class="coll-icon">📋</span>
-            <span class="coll-name">All Games</span>
+            <span class="coll-name">{{ 'library.allGames' | translate }}</span>
             <span class="coll-count">{{ totalGameCount }}</span>
           </div>
           <div class="coll-item" *ngFor="let c of collections"
@@ -49,25 +51,25 @@ import { Game, Collection } from '../../models/game.model';
             <span class="coll-name">{{ collectionDisplayName(c) }}</span>
             <span class="coll-count">{{ c.game_count }}</span>
             <button class="coll-delete" (click)="$event.stopPropagation(); deleteCollection(c)"
-                    *ngIf="c.type !== 'ai-games'" title="Delete">✕</button>
+                    *ngIf="c.type !== 'ai-games'" [title]="'library.delete' | translate">✕</button>
           </div>
         </div>
 
         <div class="games-panel">
           <div class="pgn-paste card" *ngIf="showPgnPaste">
-            <textarea [(ngModel)]="pgnText" placeholder="Paste PGN here..." rows="6"></textarea>
+            <textarea [(ngModel)]="pgnText" [placeholder]="'library.pastePgnPlaceholder' | translate" rows="6"></textarea>
             <div class="paste-actions">
               <button class="btn btn-primary" (click)="importPgnText()" [disabled]="!pgnText.trim()">
-                Import
+                {{ 'library.import' | translate }}
               </button>
-              <button class="btn btn-secondary" (click)="showPgnPaste = false">Cancel</button>
+              <button class="btn btn-secondary" (click)="showPgnPaste = false">{{ 'library.cancel' | translate }}</button>
             </div>
           </div>
 
           <div class="lichess-import card" *ngIf="showLichessImport">
-            <h3>Import from Lichess</h3>
+            <h3>{{ 'library.importFromLichess' | translate }}</h3>
             <div class="lichess-form">
-              <input type="text" [(ngModel)]="lichessUsername" placeholder="Lichess username..."
+              <input type="text" [(ngModel)]="lichessUsername" [placeholder]="'library.lichessUserPlaceholder' | translate"
                      (keyup.enter)="fetchLichessGames()">
               <select [(ngModel)]="lichessMax">
                 <option [value]="10">Last 10</option>
@@ -85,67 +87,67 @@ import { Game, Collection } from '../../models/game.model';
               </select>
               <button class="btn btn-primary" (click)="fetchLichessGames()"
                       [disabled]="!lichessUsername.trim() || lichessLoading">
-                {{ lichessLoading ? 'Fetching...' : 'Fetch & Import' }}
+                {{ lichessLoading ? ('library.fetching' | translate) : ('library.fetchImport' | translate) }}
               </button>
-              <button class="btn btn-secondary" (click)="showLichessImport = false">Cancel</button>
+              <button class="btn btn-secondary" (click)="showLichessImport = false">{{ 'library.cancel' | translate }}</button>
             </div>
             <p *ngIf="lichessProgress" class="progress-msg">{{ lichessProgress }}</p>
             <p *ngIf="lichessError" class="error-msg">{{ lichessError }}</p>
           </div>
 
           <div class="new-collection card" *ngIf="showNewCollection">
-            <h3>New Collection</h3>
+            <h3>{{ 'library.newCollection' | translate }}</h3>
             <div class="new-coll-form">
-              <input type="text" [(ngModel)]="newCollName" placeholder="Collection name...">
-              <input type="text" [(ngModel)]="newCollDesc" placeholder="Description (optional)">
+              <input type="text" [(ngModel)]="newCollName" [placeholder]="'library.collNamePlaceholder' | translate">
+              <input type="text" [(ngModel)]="newCollDesc" [placeholder]="'library.collDescPlaceholder' | translate">
               <button class="btn btn-primary" (click)="createCollection()"
-                      [disabled]="!newCollName.trim()">Create</button>
-              <button class="btn btn-secondary" (click)="showNewCollection = false">Cancel</button>
+                      [disabled]="!newCollName.trim()">{{ 'library.create' | translate }}</button>
+              <button class="btn btn-secondary" (click)="showNewCollection = false">{{ 'library.cancel' | translate }}</button>
             </div>
           </div>
 
           <!-- Speed filter chips for Lichess collections -->
           <div class="speed-chips" *ngIf="availableSpeeds.length > 0">
             <button class="speed-chip" [class.active]="speedFilter === ''"
-                    (click)="setSpeedFilter('')">All</button>
+                    (click)="setSpeedFilter('')">{{ 'library.all' | translate }}</button>
             <button class="speed-chip" *ngFor="let speed of availableSpeeds"
                     [class.active]="speedFilter === speed"
                     (click)="setSpeedFilter(speed)">{{ speed }}</button>
           </div>
 
           <div class="filters card">
-            <input type="text" [(ngModel)]="searchQuery" placeholder="Search player, event..."
+            <input type="text" [(ngModel)]="searchQuery" [placeholder]="'library.searchPlaceholder' | translate"
                    (input)="loadGames()" class="search-input">
             <select [(ngModel)]="filterResult" (change)="loadGames()">
-              <option value="">All results</option>
-              <option value="1-0">White wins (1-0)</option>
-              <option value="0-1">Black wins (0-1)</option>
-              <option value="1/2-1/2">Draw (1/2-1/2)</option>
+              <option value="">{{ 'library.allResults' | translate }}</option>
+              <option value="1-0">{{ 'library.whiteWins' | translate }}</option>
+              <option value="0-1">{{ 'library.blackWins' | translate }}</option>
+              <option value="1/2-1/2">{{ 'library.draw' | translate }}</option>
             </select>
             <select *ngIf="availableOpenings.length > 0" [(ngModel)]="filterOpening" (change)="loadGames()" class="opening-filter">
-              <option value="">All openings</option>
+              <option value="">{{ 'library.allOpenings' | translate }}</option>
               <option *ngFor="let o of availableOpenings" [value]="o">{{ o }}</option>
             </select>
           </div>
 
           <div class="sort-bar">
-            <span class="game-count">{{ displayedGames.length }}<span *ngIf="collectionGameCount > 0"> of {{ collectionGameCount }}</span> games</span>
+            <span class="game-count">{{ displayedGames.length }}<span *ngIf="collectionGameCount > 0"> {{ 'library.of' | translate }} {{ collectionGameCount }}</span> {{ 'library.games' | translate }}</span>
             <div class="sort-buttons">
               <button class="sort-btn" [class.active]="sortField === 'date'"
                       (click)="toggleSort('date')" title="Sort by date">
-                Date {{ sortField === 'date' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
+                {{ 'library.date' | translate }} {{ sortField === 'date' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
               </button>
               <button class="sort-btn" [class.active]="sortField === 'white_elo'"
                       (click)="toggleSort('white_elo')" title="Sort by ELO">
-                ELO {{ sortField === 'white_elo' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
+                {{ 'library.elo' | translate }} {{ sortField === 'white_elo' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
               </button>
               <button class="sort-btn" [class.active]="sortField === 'result'"
                       (click)="toggleSort('result')" title="Sort by result">
-                Result {{ sortField === 'result' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
+                {{ 'library.result' | translate }} {{ sortField === 'result' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
               </button>
               <button class="sort-btn" [class.active]="sortField === 'eco'"
                       (click)="toggleSort('eco')" title="Sort by opening">
-                ECO {{ sortField === 'eco' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
+                {{ 'library.eco' | translate }} {{ sortField === 'eco' ? (sortDir === 'asc' ? '↑' : '↓') : '' }}
               </button>
             </div>
           </div>
@@ -163,29 +165,29 @@ import { Game, Collection } from '../../models/game.model';
                 <span *ngIf="game.eco" class="tag eco">{{ game.eco }}</span>
                 <span *ngIf="game.opening_name" class="tag opening" [title]="game.opening_name">{{ game.opening_name }}</span>
                 <span class="tag source">{{ game.source }}</span>
-                <span *ngIf="game.analysis_json" class="tag analyzed">Analyzed</span>
+                <span *ngIf="game.analysis_json" class="tag analyzed">{{ 'library.analyzed' | translate }}</span>
                 <span *ngIf="game.is_favorite" class="tag fav">★</span>
                 <span class="date">{{ game.date }}</span>
               </div>
               <div class="game-actions" (click)="$event.stopPropagation()">
-                <button class="btn-icon" title="Favorite" (click)="toggleFavorite(game)">
+                <button class="btn-icon" [title]="'library.favorite' | translate" (click)="toggleFavorite(game)">
                   {{ game.is_favorite ? '★' : '☆' }}
                 </button>
-                <button class="btn-icon" title="Analyze" (click)="analyzeGame(game)">🔍</button>
-                <button class="btn-icon" title="Export PGN" (click)="exportGame(game)">📋</button>
-                <button class="btn-icon delete" title="Delete" (click)="deleteGame(game)">✕</button>
+                <button class="btn-icon" [title]="'library.analyze' | translate" (click)="analyzeGame(game)">🔍</button>
+                <button class="btn-icon" [title]="'library.exportPgn' | translate" (click)="exportGame(game)">📋</button>
+                <button class="btn-icon delete" [title]="'library.delete' | translate" (click)="deleteGame(game)">✕</button>
               </div>
             </div>
           </div>
 
           <div class="empty-state card" *ngIf="displayedGames.length === 0 && !loading">
-            <p>No games found.</p>
-            <p class="hint">Play a game vs AI, import a PGN file, or fetch games from Lichess.</p>
+            <p>{{ 'library.noGames' | translate }}</p>
+            <p class="hint">{{ 'library.noGamesHint' | translate }}</p>
           </div>
 
           <div class="load-more" *ngIf="hasMore">
             <button class="btn btn-secondary load-more-btn" (click)="loadMore()" [disabled]="loadingMore">
-              {{ loadingMore ? 'Loading...' : 'Load more' }}
+              {{ loadingMore ? ('library.loading' | translate) : ('library.loadMore' | translate) }}
             </button>
           </div>
 
@@ -481,6 +483,7 @@ export class GamesLibraryComponent implements OnInit {
     private pgnService: PgnService,
     private lichessApi: LichessApiService,
     private router: Router,
+    private i18n: TranslationService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -610,11 +613,11 @@ export class GamesLibraryComponent implements OnInit {
 
   async deleteGame(game: Game): Promise<void> {
     if (!game.id) return;
-    if (!confirm(`Delete game ${game.white} vs ${game.black}?`)) return;
+    if (!confirm(this.i18n.t('library.confirmDelete', {white: game.white, black: game.black}))) return;
     await this.db.deleteGame(game.id);
     this.displayedGames = this.displayedGames.filter(g => g.id !== game.id);
     await this.loadCollections();
-    this.statusMsg = 'Game deleted.';
+    this.statusMsg = this.i18n.t('library.gameDeleted');
     setTimeout(() => this.statusMsg = '', 3000);
   }
 
@@ -630,7 +633,7 @@ export class GamesLibraryComponent implements OnInit {
   exportGame(game: Game): void {
     const pgn = this.pgnService.exportPgn(game);
     navigator.clipboard.writeText(pgn);
-    this.statusMsg = 'PGN copied to clipboard!';
+    this.statusMsg = this.i18n.t('library.pgnCopied');
     setTimeout(() => this.statusMsg = '', 3000);
   }
 
@@ -642,7 +645,7 @@ export class GamesLibraryComponent implements OnInit {
     const count = await this.db.importGames(games, file.name.replace(/\.pgn$/i, ''));
     await this.loadCollections();
     await this.loadGames();
-    this.statusMsg = `Imported ${count} game(s) from file.`;
+    this.statusMsg = this.i18n.t('library.importedFromFile', {count});
     setTimeout(() => this.statusMsg = '', 4000);
     input.value = '';
   }
@@ -655,7 +658,7 @@ export class GamesLibraryComponent implements OnInit {
     await this.loadGames();
     this.pgnText = '';
     this.showPgnPaste = false;
-    this.statusMsg = `Imported ${count} game(s).`;
+    this.statusMsg = this.i18n.t('library.imported', {count});
     setTimeout(() => this.statusMsg = '', 4000);
   }
 
@@ -681,7 +684,7 @@ export class GamesLibraryComponent implements OnInit {
       await this.loadCollections();
       await this.selectCollection(result.collection_id);
 
-      let msg = `Imported ${result.imported} game(s) from Lichess.`;
+      let msg = this.i18n.t('library.importedLichess', {count: result.imported});
       if (result.skipped_duplicates > 0) {
         msg += ` (${result.skipped_duplicates} duplicates skipped)`;
       }
@@ -710,7 +713,7 @@ export class GamesLibraryComponent implements OnInit {
   }
 
   async deleteCollection(coll: Collection): Promise<void> {
-    if (!confirm(`Delete collection "${coll.name}"? Games will be moved to "Sin colección".`)) return;
+    if (!confirm(this.i18n.t('library.confirmDeleteColl', {name: coll.name}))) return;
     await this.db.deleteCollection(coll.id);
     if (this.selectedCollectionId === coll.id) {
       this.selectedCollectionId = null;
@@ -719,7 +722,7 @@ export class GamesLibraryComponent implements OnInit {
     }
     await this.loadCollections();
     await this.loadGames();
-    this.statusMsg = 'Collection deleted.';
+    this.statusMsg = this.i18n.t('library.collectionDeleted');
     setTimeout(() => this.statusMsg = '', 3000);
   }
 

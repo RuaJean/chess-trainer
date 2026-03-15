@@ -10,12 +10,14 @@ import { StockfishService } from '../../core/services/stockfish.service';
 import { ClockService } from '../../core/services/clock.service';
 import { DatabaseService } from '../../core/services/database.service';
 import { SoundService } from '../../core/services/sound.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { EngineConfig } from '../../models/engine-config.model';
 
 @Component({
   selector: 'app-play-ai',
   standalone: true,
-  imports: [CommonModule, BoardComponent, ClockComponent, MoveListComponent, NewGameDialogComponent],
+  imports: [CommonModule, BoardComponent, ClockComponent, MoveListComponent, NewGameDialogComponent, TranslatePipe],
   template: `
     <div class="play-container">
       <div class="board-area">
@@ -65,16 +67,16 @@ import { EngineConfig } from '../../models/engine-config.model';
 
         <div class="controls card">
           <button class="btn btn-secondary" (click)="showNewGameDialog = true">
-            New Game
+            {{ 'play.newGame' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="undoMove()" [disabled]="gameOver || !canUndo">
-            Undo
+            {{ 'play.undo' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="offerDraw()" [disabled]="gameOver">
-            Draw
+            {{ 'play.draw' | translate }}
           </button>
           <button class="btn btn-danger" (click)="resign()" [disabled]="gameOver">
-            Resign
+            {{ 'play.resign' | translate }}
           </button>
         </div>
       </div>
@@ -191,10 +193,11 @@ export class PlayAiComponent implements OnInit, OnDestroy {
   gameOver = false;
   resultText = '';
   resultReason = '';
+  resultCode = '*';
   canUndo = false;
 
-  whiteName = 'You';
-  blackName = 'Stockfish';
+  whiteName = '';
+  blackName = '';
 
   clockEnabled = false;
   private engineConfig!: EngineConfig;
@@ -209,6 +212,7 @@ export class PlayAiComponent implements OnInit, OnDestroy {
     private clockService: ClockService,
     private db: DatabaseService,
     private sound: SoundService,
+    private i18n: TranslationService,
   ) {}
 
   get isPlayerTurn(): boolean {
@@ -243,8 +247,8 @@ export class PlayAiComponent implements OnInit, OnDestroy {
     this.engineConfig = options.engineConfig;
     this.clockEnabled = options.clockConfig.initialTime > 0;
 
-    this.whiteName = this.playerColor === 'white' ? 'You' : `Stockfish (${options.engineConfig.elo})`;
-    this.blackName = this.playerColor === 'black' ? 'You' : `Stockfish (${options.engineConfig.elo})`;
+    this.whiteName = this.playerColor === 'white' ? this.i18n.t('play.you') : `Stockfish (${options.engineConfig.elo})`;
+    this.blackName = this.playerColor === 'black' ? this.i18n.t('play.you') : `Stockfish (${options.engineConfig.elo})`;
 
     this.stockfish.setOptions(this.engineConfig);
 
@@ -256,6 +260,7 @@ export class PlayAiComponent implements OnInit, OnDestroy {
     this.gameOver = false;
     this.resultText = '';
     this.resultReason = '';
+    this.resultCode = '*';
     this.moveEntries = [];
     this.moveHistory = [];
     this.currentMoveIdx = -1;
@@ -373,20 +378,23 @@ export class PlayAiComponent implements OnInit, OnDestroy {
     this.clockService.stop();
 
     if (result.isCheckmate) {
-      const winner = this.chessLogic.turn() === 'w' ? 'Black' : 'White';
-      this.resultText = `${winner} wins!`;
-      this.resultReason = 'by checkmate';
+      const isWhiteWin = this.chessLogic.turn() === 'b';
+      this.resultCode = isWhiteWin ? '1-0' : '0-1';
+      this.resultText = this.i18n.t(isWhiteWin ? 'play.whiteWins' : 'play.blackWins');
+      this.resultReason = this.i18n.t('play.byCheckmate');
     } else if (result.isStalemate) {
-      this.resultText = 'Draw';
-      this.resultReason = 'by stalemate';
+      this.resultCode = '1/2-1/2';
+      this.resultText = this.i18n.t('play.drawResult');
+      this.resultReason = this.i18n.t('play.byStalemate');
     } else if (result.isDraw) {
-      this.resultText = 'Draw';
+      this.resultCode = '1/2-1/2';
+      this.resultText = this.i18n.t('play.drawResult');
       if (this.chessLogic.isThreefoldRepetition()) {
-        this.resultReason = 'by threefold repetition';
+        this.resultReason = this.i18n.t('play.byRepetition');
       } else if (this.chessLogic.isInsufficientMaterial()) {
-        this.resultReason = 'by insufficient material';
+        this.resultReason = this.i18n.t('play.byInsufficient');
       } else {
-        this.resultReason = 'by 50-move rule';
+        this.resultReason = this.i18n.t('play.by50Move');
       }
     }
 
@@ -396,9 +404,10 @@ export class PlayAiComponent implements OnInit, OnDestroy {
   private onFlagged(side: 'w' | 'b'): void {
     this.gameOver = true;
     this.clockService.stop();
-    const winner = side === 'w' ? 'Black' : 'White';
-    this.resultText = `${winner} wins!`;
-    this.resultReason = 'on time';
+    const isWhiteWin = side === 'b';
+    this.resultCode = isWhiteWin ? '1-0' : '0-1';
+    this.resultText = this.i18n.t(isWhiteWin ? 'play.whiteWins' : 'play.blackWins');
+    this.resultReason = this.i18n.t('play.onTime');
     this.saveGame();
   }
 
@@ -407,20 +416,21 @@ export class PlayAiComponent implements OnInit, OnDestroy {
     this.gameOver = true;
     this.clockService.stop();
     this.stockfish.stop();
-    const winner = this.playerColor === 'white' ? 'Black' : 'White';
-    this.resultText = `${winner} wins!`;
-    this.resultReason = 'by resignation';
+    const isWhiteWin = this.playerColor === 'black';
+    this.resultCode = isWhiteWin ? '1-0' : '0-1';
+    this.resultText = this.i18n.t(isWhiteWin ? 'play.whiteWins' : 'play.blackWins');
+    this.resultReason = this.i18n.t('play.byResignation');
     this.saveGame();
   }
 
   offerDraw(): void {
     if (this.gameOver) return;
-    // Simple: accept draw immediately (can be enhanced later)
     this.gameOver = true;
     this.clockService.stop();
     this.stockfish.stop();
-    this.resultText = 'Draw';
-    this.resultReason = 'by agreement';
+    this.resultCode = '1/2-1/2';
+    this.resultText = this.i18n.t('play.drawResult');
+    this.resultReason = this.i18n.t('play.byAgreement');
     this.saveGame();
   }
 
@@ -507,10 +517,7 @@ export class PlayAiComponent implements OnInit, OnDestroy {
   }
 
   private async saveGame(): Promise<void> {
-    let result = '*';
-    if (this.resultText.includes('White wins')) result = '1-0';
-    else if (this.resultText.includes('Black wins')) result = '0-1';
-    else if (this.resultText === 'Draw') result = '1/2-1/2';
+    const result = this.resultCode;
 
     this.chessLogic.header(
       'Event', 'AI Game',

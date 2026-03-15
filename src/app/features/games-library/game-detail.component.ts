@@ -6,12 +6,14 @@ import { BoardComponent } from '../../shared/components/board/board.component';
 import { MoveListComponent, MoveEntry } from '../../shared/components/move-list/move-list.component';
 import { DatabaseService } from '../../core/services/database.service';
 import { PgnService } from '../../core/services/pgn.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { Game } from '../../models/game.model';
 
 @Component({
   selector: 'app-game-detail',
   standalone: true,
-  imports: [CommonModule, BoardComponent, MoveListComponent],
+  imports: [CommonModule, BoardComponent, MoveListComponent, TranslatePipe],
   template: `
     <div class="detail-container" *ngIf="game">
       <div class="board-area">
@@ -46,10 +48,10 @@ import { Game } from '../../models/game.model';
         </div>
 
         <div class="detail-actions card">
-          <button class="btn btn-secondary" (click)="flipBoard()">Flip</button>
-          <button class="btn btn-secondary" (click)="analyzeGame()">Analyze</button>
-          <button class="btn btn-secondary" (click)="copyPgn()">Copy PGN</button>
-          <button class="btn btn-secondary" (click)="goBack()">Back</button>
+          <button class="btn btn-secondary" (click)="flipBoard()">{{ 'detail.flip' | translate }}</button>
+          <button class="btn btn-secondary" (click)="analyzeGame()">{{ 'detail.analyze' | translate }}</button>
+          <button class="btn btn-secondary" (click)="copyPgn()">{{ 'detail.copyPgn' | translate }}</button>
+          <button class="btn btn-secondary" (click)="goBack()">{{ 'detail.back' | translate }}</button>
         </div>
 
         <p class="status-msg" *ngIf="statusMsg">{{ statusMsg }}</p>
@@ -135,6 +137,7 @@ export class GameDetailComponent implements OnInit {
     private router: Router,
     private db: DatabaseService,
     private pgnService: PgnService,
+    private i18n: TranslationService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -232,7 +235,7 @@ export class GameDetailComponent implements OnInit {
     if (!this.game) return;
     const pgn = this.pgnService.exportPgn(this.game);
     navigator.clipboard.writeText(pgn);
-    this.statusMsg = 'PGN copied!';
+    this.statusMsg = this.i18n.t('detail.pgnCopied');
     setTimeout(() => this.statusMsg = '', 3000);
   }
 

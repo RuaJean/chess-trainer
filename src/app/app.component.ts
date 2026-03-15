@@ -2,47 +2,55 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService, User } from './core/services/auth.service';
+import { TranslationService } from './core/services/translation.service';
+import { TranslatePipe } from './shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
   template: `
     <div class="app-layout" *ngIf="auth.isLoggedIn; else authLayout">
       <nav class="sidebar">
         <div class="sidebar-header">
           <span class="logo">♞</span>
-          <span class="app-name">Chess Trainer</span>
+          <span class="app-name">{{ 'app.name' | translate }}</span>
         </div>
         <ul class="nav-links">
           <li>
             <a routerLink="/play" routerLinkActive="active">
               <span class="nav-icon">⚔</span>
-              <span>Play vs AI</span>
+              <span>{{ 'nav.play' | translate }}</span>
             </a>
           </li>
           <li>
             <a routerLink="/library" routerLinkActive="active">
               <span class="nav-icon">📚</span>
-              <span>Library</span>
+              <span>{{ 'nav.library' | translate }}</span>
             </a>
           </li>
           <li>
             <a routerLink="/analysis" routerLinkActive="active">
               <span class="nav-icon">🔍</span>
-              <span>Analysis</span>
+              <span>{{ 'nav.analysis' | translate }}</span>
             </a>
           </li>
           <li>
             <a routerLink="/blindfold" routerLinkActive="active">
               <span class="nav-icon">🎯</span>
-              <span>Blindfold</span>
+              <span>{{ 'nav.blindfold' | translate }}</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/coach" routerLinkActive="active">
+              <span class="nav-icon">🎓</span>
+              <span>{{ 'nav.coach' | translate }}</span>
             </a>
           </li>
           <li>
             <a routerLink="/settings" routerLinkActive="active">
               <span class="nav-icon">⚙</span>
-              <span>Settings</span>
+              <span>{{ 'nav.settings' | translate }}</span>
             </a>
           </li>
         </ul>
@@ -51,7 +59,7 @@ import { AuthService, User } from './core/services/auth.service';
             <span class="user-icon">👤</span>
             <span class="username">{{ auth.user?.username }}</span>
           </div>
-          <button class="logout-btn" (click)="auth.logout()" title="Logout">✕</button>
+          <button class="logout-btn" (click)="auth.logout()" [title]="'nav.logout' | translate">✕</button>
         </div>
       </nav>
       <main class="main-content">
@@ -170,9 +178,15 @@ import { AuthService, User } from './core/services/auth.service';
   `],
 })
 export class AppComponent implements OnInit {
-  constructor(public auth: AuthService) {}
+  constructor(
+    public auth: AuthService,
+    private i18n: TranslationService,
+  ) {}
 
   ngOnInit(): void {
-    this.auth.init().subscribe();
+    this.auth.init().subscribe({
+      next: () => this.i18n.init(),
+      error: () => this.i18n.init(),
+    });
   }
 }

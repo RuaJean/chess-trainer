@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClockConfig, CLOCK_PRESETS } from '../../models/clock.model';
 import { EngineConfig, DEFAULT_ENGINE_CONFIG } from '../../models/engine-config.model';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 export interface NewGameOptions {
   playerColor: 'white' | 'black' | 'random';
@@ -13,44 +14,44 @@ export interface NewGameOptions {
 @Component({
   selector: 'app-new-game-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
       <div class="modal-content" (click)="$event.stopPropagation()">
-        <h2>New Game vs Computer</h2>
+        <h2>{{ 'dialog.title' | translate }}</h2>
 
         <div class="form-section">
-          <label>Play as</label>
+          <label>{{ 'dialog.playAs' | translate }}</label>
           <div class="color-picker">
             <button class="color-btn" [class.selected]="playerColor === 'white'"
                     (click)="playerColor = 'white'">
-              <span class="piece-icon white">♔</span> White
+              <span class="piece-icon white">♔</span> {{ 'dialog.white' | translate }}
             </button>
             <button class="color-btn" [class.selected]="playerColor === 'random'"
                     (click)="playerColor = 'random'">
-              🎲 Random
+              🎲 {{ 'dialog.random' | translate }}
             </button>
             <button class="color-btn" [class.selected]="playerColor === 'black'"
                     (click)="playerColor = 'black'">
-              <span class="piece-icon black">♚</span> Black
+              <span class="piece-icon black">♚</span> {{ 'dialog.black' | translate }}
             </button>
           </div>
         </div>
 
         <div class="form-section">
-          <label>Computer Strength: <strong>{{ elo }} ELO</strong></label>
+          <label>{{ 'dialog.strength' | translate }} <strong>{{ elo }} ELO</strong></label>
           <input type="range" [min]="1320" [max]="3190" [step]="10"
                  [(ngModel)]="elo" class="elo-slider">
           <div class="elo-labels">
-            <span>Beginner</span>
-            <span>Intermediate</span>
-            <span>Advanced</span>
-            <span>Master</span>
+            <span>{{ 'dialog.beginner' | translate }}</span>
+            <span>{{ 'dialog.intermediate' | translate }}</span>
+            <span>{{ 'dialog.advanced' | translate }}</span>
+            <span>{{ 'dialog.master' | translate }}</span>
           </div>
         </div>
 
         <div class="form-section">
-          <label>Time Control</label>
+          <label>{{ 'dialog.timeControl' | translate }}</label>
           <div class="time-presets">
             <button *ngFor="let preset of clockPresets"
                     class="preset-btn"
@@ -62,8 +63,8 @@ export interface NewGameOptions {
         </div>
 
         <div class="form-actions">
-          <button class="btn btn-secondary" (click)="close.emit()">Cancel</button>
-          <button class="btn btn-primary" (click)="startGame()">Play!</button>
+          <button class="btn btn-secondary" (click)="close.emit()">{{ 'dialog.cancel' | translate }}</button>
+          <button class="btn btn-primary" (click)="startGame()">{{ 'dialog.play' | translate }}</button>
         </div>
       </div>
     </div>

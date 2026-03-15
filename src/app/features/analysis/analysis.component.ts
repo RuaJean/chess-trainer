@@ -19,11 +19,13 @@ import {
 } from '../../core/services/game-analysis.service';
 import { Game } from '../../models/game.model';
 import { OpeningService } from '../../core/services/opening.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-analysis',
   standalone: true,
-  imports: [CommonModule, FormsModule, BoardComponent, MoveListComponent, EvalChartComponent],
+  imports: [CommonModule, FormsModule, BoardComponent, MoveListComponent, EvalChartComponent, TranslatePipe],
   template: `
     <div class="analysis-container">
       <div class="board-area">
@@ -55,7 +57,7 @@ import { OpeningService } from '../../core/services/opening.service';
             </div>
             <div class="eval-info">
               <span class="eval-score">{{ evalDisplay }}</span>
-              <span class="eval-depth">depth {{ currentDepth }}</span>
+              <span class="eval-depth">{{ 'analysis.depthLabel' | translate }} {{ currentDepth }}</span>
             </div>
           </div>
           <div class="engine-lines" *ngIf="engineLines.length > 0">
@@ -69,13 +71,13 @@ import { OpeningService } from '../../core/services/opening.service';
         <!-- Engine controls -->
         <div class="engine-controls card">
           <div class="control-row">
-            <label>Lines:</label>
+            <label>{{ 'analysis.lines' | translate }}</label>
             <select [(ngModel)]="multiPv" (change)="restartAnalysis()">
               <option [value]="1">1</option>
               <option [value]="2">2</option>
               <option [value]="3">3</option>
             </select>
-            <label>Depth:</label>
+            <label>{{ 'analysis.depth' | translate }}</label>
             <select [(ngModel)]="maxDepth" (change)="restartAnalysis()">
               <option [value]="18">18</option>
               <option [value]="20">20</option>
@@ -85,19 +87,19 @@ import { OpeningService } from '../../core/services/opening.service';
           </div>
           <div class="control-row">
             <button class="btn btn-secondary" [class.active]="analyzing" (click)="toggleAnalysis()">
-              {{ analyzing ? 'Stop Engine' : 'Engine' }}
+              {{ analyzing ? ('analysis.stopEngine' | translate) : ('analysis.engine' | translate) }}
             </button>
-            <button class="btn btn-secondary" (click)="flipBoard()">Flip</button>
-            <button class="btn btn-secondary" (click)="resetBoard()">Reset</button>
+            <button class="btn btn-secondary" (click)="flipBoard()">{{ 'analysis.flip' | translate }}</button>
+            <button class="btn btn-secondary" (click)="resetBoard()">{{ 'analysis.reset' | translate }}</button>
           </div>
           <div class="control-row" *ngIf="hasLoadedGame && !isAnalyzingGame">
             <button class="btn btn-primary full-width" (click)="analyzeFullGame()">
-              {{ fullAnalysis ? 'Re-analyze' : 'Analyze Game' }}
+              {{ fullAnalysis ? ('analysis.reanalyze' | translate) : ('analysis.analyzeGame' | translate) }}
             </button>
             <select [(ngModel)]="analysisDepth" class="depth-select">
-              <option [ngValue]="10">d10 (fast)</option>
-              <option [ngValue]="12">d12</option>
-              <option [ngValue]="16">d16 (deep)</option>
+              <option [ngValue]="10">{{ 'analysis.d10' | translate }}</option>
+              <option [ngValue]="12">{{ 'analysis.d12' | translate }}</option>
+              <option [ngValue]="16">{{ 'analysis.d16' | translate }}</option>
             </select>
           </div>
         </div>
@@ -105,38 +107,38 @@ import { OpeningService } from '../../core/services/opening.service';
         <!-- Full Analysis Progress -->
         <div class="progress-section card" *ngIf="isAnalyzingGame">
           <div class="progress-header">
-            <span>Analyzing game...</span>
-            <button class="btn btn-danger small" (click)="cancelFullAnalysis()">Cancel</button>
+            <span>{{ 'analysis.analyzing' | translate }}</span>
+            <button class="btn btn-danger small" (click)="cancelFullAnalysis()">{{ 'analysis.cancel' | translate }}</button>
           </div>
           <div class="progress-bar">
             <div class="progress-fill" [style.width.%]="analysisProgress?.percent || 0"></div>
           </div>
           <span class="progress-text">
-            Move {{ analysisProgress?.currentMove || 0 }} / {{ analysisProgress?.totalMoves || 0 }}
+            {{ 'analysis.moveOf' | translate:{ current: analysisProgress?.currentMove || 0, total: analysisProgress?.totalMoves || 0 } }}
           </span>
         </div>
 
         <!-- Full Analysis Results -->
         <div class="results-section card" *ngIf="fullAnalysis && !isAnalyzingGame">
-          <div class="results-header">Game Analysis</div>
+          <div class="results-header">{{ 'analysis.gameAnalysis' | translate }}</div>
           <div class="accuracy-row">
             <div class="accuracy-col">
               <div class="accuracy-value white-text">{{ fullAnalysis.whiteAccuracy }}%</div>
-              <div class="accuracy-label">White</div>
+              <div class="accuracy-label">{{ 'analysis.white' | translate }}</div>
               <div class="accuracy-detail">
-                <span class="stat-inaccuracy">{{ fullAnalysis.whiteInaccuracies }} Inaccuracies</span>
-                <span class="stat-mistake">{{ fullAnalysis.whiteMistakes }} Mistakes</span>
-                <span class="stat-blunder">{{ fullAnalysis.whiteBlunders }} Blunders</span>
+                <span class="stat-inaccuracy">{{ fullAnalysis.whiteInaccuracies }} {{ 'analysis.inaccuracies' | translate }}</span>
+                <span class="stat-mistake">{{ fullAnalysis.whiteMistakes }} {{ 'analysis.mistakes' | translate }}</span>
+                <span class="stat-blunder">{{ fullAnalysis.whiteBlunders }} {{ 'analysis.blunders' | translate }}</span>
               </div>
               <div class="acpl-label">ACPL: {{ fullAnalysis.whiteACPL }}</div>
             </div>
             <div class="accuracy-col">
               <div class="accuracy-value black-text">{{ fullAnalysis.blackAccuracy }}%</div>
-              <div class="accuracy-label">Black</div>
+              <div class="accuracy-label">{{ 'analysis.black' | translate }}</div>
               <div class="accuracy-detail">
-                <span class="stat-inaccuracy">{{ fullAnalysis.blackInaccuracies }} Inaccuracies</span>
-                <span class="stat-mistake">{{ fullAnalysis.blackMistakes }} Mistakes</span>
-                <span class="stat-blunder">{{ fullAnalysis.blackBlunders }} Blunders</span>
+                <span class="stat-inaccuracy">{{ fullAnalysis.blackInaccuracies }} {{ 'analysis.inaccuracies' | translate }}</span>
+                <span class="stat-mistake">{{ fullAnalysis.blackMistakes }} {{ 'analysis.mistakes' | translate }}</span>
+                <span class="stat-blunder">{{ fullAnalysis.blackBlunders }} {{ 'analysis.blunders' | translate }}</span>
               </div>
               <div class="acpl-label">ACPL: {{ fullAnalysis.blackACPL }}</div>
             </div>
@@ -147,19 +149,19 @@ import { OpeningService } from '../../core/services/opening.service';
         <div class="move-detail card" *ngIf="selectedMoveAnalysis as ma">
           <div class="detail-header" [ngClass]="'cls-' + ma.classification">
             <span class="detail-cls">{{ classLabel(ma.classification) }}</span>
-            <span class="detail-acc">{{ ma.accuracy | number:'1.0-0' }}% accuracy</span>
+            <span class="detail-acc">{{ ma.accuracy | number:'1.0-0' }}% {{ 'analysis.accuracy' | translate }}</span>
           </div>
           <div class="detail-body">
             <div class="detail-row">
-              <span class="detail-label">Played:</span>
+              <span class="detail-label">{{ 'analysis.played' | translate }}</span>
               <span class="detail-move">{{ ma.san }}</span>
             </div>
             <div class="detail-row" *ngIf="ma.evalBefore.bestMoveSan && ma.evalBefore.bestMoveSan !== ma.san">
-              <span class="detail-label">Best:</span>
+              <span class="detail-label">{{ 'analysis.best' | translate }}</span>
               <span class="detail-move best">{{ ma.evalBefore.bestMoveSan }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Win%:</span>
+              <span class="detail-label">{{ 'analysis.winPct' | translate }}</span>
               <span>{{ ma.winPercentBefore | number:'1.0-0' }}% &rarr; {{ ma.winPercentAfter | number:'1.0-0' }}%</span>
             </div>
           </div>
@@ -168,17 +170,17 @@ import { OpeningService } from '../../core/services/opening.service';
         <!-- Load FEN/PGN -->
         <div class="load-section card">
           <div class="load-tabs">
-            <button [class.active]="loadTab === 'fen'" (click)="loadTab = 'fen'">FEN</button>
-            <button [class.active]="loadTab === 'pgn'" (click)="loadTab = 'pgn'">PGN</button>
+            <button [class.active]="loadTab === 'fen'" (click)="loadTab = 'fen'">{{ 'analysis.fen' | translate }}</button>
+            <button [class.active]="loadTab === 'pgn'" (click)="loadTab = 'pgn'">{{ 'analysis.pgn' | translate }}</button>
           </div>
           <div *ngIf="loadTab === 'fen'">
-            <input type="text" [(ngModel)]="fenInput" placeholder="Paste FEN..."
+            <input type="text" [(ngModel)]="fenInput" [placeholder]="'analysis.pasteFen' | translate"
                    class="full-input" (keyup.enter)="loadFen()">
-            <button class="btn btn-primary small" (click)="loadFen()">Load</button>
+            <button class="btn btn-primary small" (click)="loadFen()">{{ 'analysis.load' | translate }}</button>
           </div>
           <div *ngIf="loadTab === 'pgn'">
-            <textarea [(ngModel)]="pgnInput" placeholder="Paste PGN..." rows="3" class="full-input"></textarea>
-            <button class="btn btn-primary small" (click)="loadPgn()">Load</button>
+            <textarea [(ngModel)]="pgnInput" [placeholder]="'analysis.pastePgn' | translate" rows="3" class="full-input"></textarea>
+            <button class="btn btn-primary small" (click)="loadPgn()">{{ 'analysis.load' | translate }}</button>
           </div>
         </div>
 
@@ -491,6 +493,7 @@ export class AnalysisComponent implements OnInit, OnDestroy {
     private gameAnalysis: GameAnalysisService,
     private openingService: OpeningService,
     private route: ActivatedRoute,
+    private i18n: TranslationService,
   ) {}
 
   @HostListener('document:keydown', ['$event'])
@@ -537,12 +540,12 @@ export class AnalysisComponent implements OnInit, OnDestroy {
 
   classLabel(cls: MoveClassification): string {
     switch (cls) {
-      case 'blunder': return 'Blunder ??';
-      case 'mistake': return 'Mistake ?';
-      case 'inaccuracy': return 'Inaccuracy ?!';
-      case 'best': return 'Best move';
-      case 'good': return 'Good move';
-      case 'book': return 'Book move';
+      case 'blunder': return this.i18n.t('analysis.blunder');
+      case 'mistake': return this.i18n.t('analysis.mistake');
+      case 'inaccuracy': return this.i18n.t('analysis.inaccuracy');
+      case 'best': return this.i18n.t('analysis.bestMove');
+      case 'good': return this.i18n.t('analysis.goodMove');
+      case 'book': return this.i18n.t('analysis.bookMove');
     }
   }
 

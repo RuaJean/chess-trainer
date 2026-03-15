@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-container">
       <div class="auth-card">
@@ -15,23 +17,23 @@ import { AuthService } from '../../core/services/auth.service';
           <span class="logo">♞</span>
           <h1>Chess Trainer</h1>
         </div>
-        <h2>Iniciar Sesión</h2>
+        <h2>{{ 'auth.login' | translate }}</h2>
         <form (ngSubmit)="onSubmit()">
           <div class="field">
-            <label>Usuario</label>
+            <label>{{ 'auth.username' | translate }}</label>
             <input type="text" [(ngModel)]="username" name="username" required autocomplete="username">
           </div>
           <div class="field">
-            <label>Contraseña</label>
+            <label>{{ 'auth.password' | translate }}</label>
             <input type="password" [(ngModel)]="password" name="password" required autocomplete="current-password">
           </div>
           <p class="error" *ngIf="error">{{ error }}</p>
           <button type="submit" class="btn btn-primary full-width" [disabled]="loading">
-            {{ loading ? 'Entrando...' : 'Entrar' }}
+            {{ loading ? ('auth.loggingIn' | translate) : ('auth.loginBtn' | translate) }}
           </button>
         </form>
         <p class="alt-action">
-          ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
+          {{ 'auth.noAccount' | translate }} <a routerLink="/register">{{ 'auth.signUp' | translate }}</a>
         </p>
       </div>
     </div>
@@ -97,7 +99,7 @@ export class LoginComponent {
   error = '';
   loading = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private i18n: TranslationService) {}
 
   onSubmit(): void {
     this.error = '';
@@ -109,7 +111,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.detail || 'Error al iniciar sesión';
+        this.error = err.error?.detail || this.i18n.t('auth.loginError');
       },
     });
   }

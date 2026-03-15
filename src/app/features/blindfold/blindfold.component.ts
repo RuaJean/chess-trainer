@@ -11,12 +11,14 @@ import { StockfishService } from '../../core/services/stockfish.service';
 import { ClockService } from '../../core/services/clock.service';
 import { SpeechService, VoiceCommand, SpeechStatus } from '../../core/services/speech.service';
 import { SoundService } from '../../core/services/sound.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { EngineConfig } from '../../models/engine-config.model';
 
 @Component({
   selector: 'app-blindfold',
   standalone: true,
-  imports: [CommonModule, FormsModule, BoardComponent, ClockComponent, MoveListComponent, NewGameDialogComponent],
+  imports: [CommonModule, FormsModule, BoardComponent, ClockComponent, MoveListComponent, NewGameDialogComponent, TranslatePipe],
   template: `
     <div class="blindfold-container">
       <div class="board-area">
@@ -41,19 +43,19 @@ import { EngineConfig } from '../../models/engine-config.model';
       <div class="side-panel">
         <!-- Blindfold controls -->
         <div class="bf-controls card">
-          <h3>Blindfold Mode</h3>
+          <h3>{{ 'blindfold.title' | translate }}</h3>
           <div class="control-toggles">
             <label class="toggle">
               <input type="checkbox" [(ngModel)]="hidePieces">
-              Hide pieces
+              {{ 'blindfold.hidePieces' | translate }}
             </label>
             <label class="toggle">
               <input type="checkbox" [(ngModel)]="speakMoves" (change)="onSpeakToggle()">
-              Speak moves
+              {{ 'blindfold.speakMoves' | translate }}
             </label>
             <label class="toggle" *ngIf="speechService.isRecognitionSupported">
               <input type="checkbox" [(ngModel)]="voiceInput" (change)="onVoiceInputToggle()">
-              Voice input
+              {{ 'blindfold.voiceInput' | translate }}
             </label>
           </div>
         </div>
@@ -107,9 +109,9 @@ import { EngineConfig } from '../../models/engine-config.model';
 
         <!-- Controls -->
         <div class="controls card">
-          <button class="btn btn-secondary" (click)="showNewGameDialog = true">New Game</button>
-          <button class="btn btn-secondary" (click)="undoMove()" [disabled]="gameOver || !canUndo">Undo</button>
-          <button class="btn btn-danger" (click)="resign()" [disabled]="gameOver">Resign</button>
+          <button class="btn btn-secondary" (click)="showNewGameDialog = true">{{ 'blindfold.newGame' | translate }}</button>
+          <button class="btn btn-secondary" (click)="undoMove()" [disabled]="gameOver || !canUndo">{{ 'blindfold.undo' | translate }}</button>
+          <button class="btn btn-danger" (click)="resign()" [disabled]="gameOver">{{ 'blindfold.resign' | translate }}</button>
         </div>
       </div>
     </div>
@@ -245,15 +247,15 @@ export class BlindfoldComponent implements OnInit, OnDestroy {
   resultReason = '';
   canUndo = false;
 
-  whiteName = 'You';
-  blackName = 'Stockfish';
+  whiteName = '';
+  blackName = '';
   clockEnabled = false;
 
   // Blindfold options
   hidePieces = true;
   speakMoves = true;
   voiceInput = false;
-  voiceStatus = 'Voice input ready';
+  voiceStatus = '';
   lastVoiceText = '';
   voiceSuggestion = '';
   speechStatus: SpeechStatus = 'stopped';
@@ -269,7 +271,10 @@ export class BlindfoldComponent implements OnInit, OnDestroy {
     private clockService: ClockService,
     public speechService: SpeechService,
     private sound: SoundService,
-  ) {}
+    private i18n: TranslationService,
+  ) {
+    this.voiceStatus = this.i18n.t('blindfold.voiceReady');
+  }
 
   get isPlayerTurn(): boolean {
     const turn = this.chessLogic.turn();
@@ -315,7 +320,7 @@ export class BlindfoldComponent implements OnInit, OnDestroy {
       this.speechService.startListening();
     } else {
       this.speechService.stopListening();
-      this.voiceStatus = 'Voice input off';
+      this.voiceStatus = this.i18n.t('blindfold.voiceOff');
     }
   }
 
@@ -338,7 +343,7 @@ export class BlindfoldComponent implements OnInit, OnDestroy {
         this.voiceStatus = 'Error en reconocimiento de voz. Intenta de nuevo.';
         break;
       case 'stopped':
-        this.voiceStatus = 'Voice input off';
+        this.voiceStatus = this.i18n.t('blindfold.voiceOff');
         break;
     }
   }
@@ -397,8 +402,8 @@ export class BlindfoldComponent implements OnInit, OnDestroy {
     this.engineConfig = options.engineConfig;
     this.clockEnabled = options.clockConfig.initialTime > 0;
 
-    this.whiteName = this.playerColor === 'white' ? 'You' : `Stockfish (${options.engineConfig.elo})`;
-    this.blackName = this.playerColor === 'black' ? 'You' : `Stockfish (${options.engineConfig.elo})`;
+    this.whiteName = this.playerColor === 'white' ? this.i18n.t('play.you') : `Stockfish (${options.engineConfig.elo})`;
+    this.blackName = this.playerColor === 'black' ? this.i18n.t('play.you') : `Stockfish (${options.engineConfig.elo})`;
 
     this.stockfish.setOptions(this.engineConfig);
     if (this.clockEnabled) this.clockService.configure(options.clockConfig);

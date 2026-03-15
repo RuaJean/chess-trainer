@@ -4,44 +4,56 @@ import { FormsModule } from '@angular/forms';
 import { Chess } from 'chess.js';
 import { DatabaseService } from '../../core/services/database.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="settings-container">
-      <h1>Settings</h1>
+      <h1>{{ 'settings.title' | translate }}</h1>
 
       <div class="card setting-section">
-        <h3>Mi cuenta</h3>
-        <p class="info">
-          Usuario: <strong>{{ auth.user?.username }}</strong><br>
-          Email: {{ auth.user?.email }}
-        </p>
-        <button class="btn btn-danger" (click)="auth.logout()">Cerrar sesión</button>
+        <h3>{{ 'settings.language' | translate }}</h3>
+        <div class="lang-buttons">
+          <button class="lang-btn" [class.active]="i18n.language === 'en'"
+                  (click)="switchLang('en')">English</button>
+          <button class="lang-btn" [class.active]="i18n.language === 'es'"
+                  (click)="switchLang('es')">Español</button>
+        </div>
       </div>
 
       <div class="card setting-section">
-        <h3>Database</h3>
+        <h3>{{ 'settings.account' | translate }}</h3>
+        <p class="info">
+          {{ 'settings.user' | translate }}: <strong>{{ auth.user?.username }}</strong><br>
+          {{ 'auth.email' | translate }}: {{ auth.user?.email }}
+        </p>
+        <button class="btn btn-danger" (click)="auth.logout()">{{ 'settings.logout' | translate }}</button>
+      </div>
+
+      <div class="card setting-section">
+        <h3>{{ 'settings.database' | translate }}</h3>
         <div class="actions">
-          <button class="btn btn-secondary" (click)="exportDb()">Export Database</button>
+          <button class="btn btn-secondary" (click)="exportDb()">{{ 'settings.exportDb' | translate }}</button>
           <label class="btn btn-secondary">
-            Import Database
+            {{ 'settings.importDb' | translate }}
             <input type="file" accept=".json" (change)="importDb($event)" hidden>
           </label>
         </div>
       </div>
 
       <div class="card setting-section">
-        <h3>PGN Import</h3>
+        <h3>{{ 'settings.pgnImport' | translate }}</h3>
         <div class="pgn-import">
-          <textarea [(ngModel)]="pgnText" placeholder="Paste PGN here..." rows="8"></textarea>
+          <textarea [(ngModel)]="pgnText" [placeholder]="'settings.pastePgn' | translate" rows="8"></textarea>
           <button class="btn btn-primary" (click)="importPgn()" [disabled]="!pgnText.trim()">
-            Import PGN
+            {{ 'settings.importPgn' | translate }}
           </button>
           <label class="btn btn-secondary">
-            Import .pgn File
+            {{ 'settings.importPgnFile' | translate }}
             <input type="file" accept=".pgn" (change)="importPgnFile($event)" hidden>
           </label>
         </div>
@@ -49,9 +61,9 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
 
       <div class="card setting-section">
-        <h3>About</h3>
-        <p>Chess Trainer - Multi-user chess training application</p>
-        <p class="info">Built with Angular, Chessground, chess.js, Stockfish WASM, FastAPI &amp; PostgreSQL</p>
+        <h3>{{ 'settings.about' | translate }}</h3>
+        <p>{{ 'settings.aboutDesc' | translate }}</p>
+        <p class="info">{{ 'settings.aboutTech' | translate }}</p>
       </div>
     </div>
   `,
@@ -96,6 +108,18 @@ import { AuthService } from '../../core/services/auth.service';
     }
     textarea:focus { border-color: #bf811d; outline: none; }
     .status { color: #629924; margin-top: 8px; font-size: 0.9em; }
+    .lang-buttons { display: flex; gap: 8px; }
+    .lang-btn {
+      padding: 8px 20px;
+      background: #302e2c;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      color: #bababa;
+      cursor: pointer;
+      font-size: 0.95em;
+    }
+    .lang-btn:hover { background: #3d3a37; }
+    .lang-btn.active { border-color: #bf811d; background: #3d3a37; color: #e0e0e0; }
   `],
 })
 export class SettingsComponent {
@@ -105,7 +129,12 @@ export class SettingsComponent {
   constructor(
     private db: DatabaseService,
     public auth: AuthService,
+    public i18n: TranslationService,
   ) {}
+
+  async switchLang(lang: string): Promise<void> {
+    await this.i18n.setLanguage(lang);
+  }
 
   async exportDb(): Promise<void> {
     const json = await this.db.exportAll();
@@ -123,14 +152,14 @@ export class SettingsComponent {
     if (!input.files?.length) return;
     const text = await input.files[0].text();
     await this.db.importAll(text);
-    this.importStatus = 'Database imported successfully!';
+    this.importStatus = this.i18n.t('settings.dbImported');
   }
 
   async importPgn(): Promise<void> {
     if (!this.pgnText.trim()) return;
     const games = this.parsePgnText(this.pgnText);
     const count = await this.db.importGames(games);
-    this.importStatus = `Imported ${count} game(s)!`;
+    this.importStatus = this.i18n.t('settings.gamesImported', { count });
     this.pgnText = '';
   }
 
@@ -141,7 +170,7 @@ export class SettingsComponent {
     const text = await file.text();
     const games = this.parsePgnText(text);
     const count = await this.db.importGames(games, file.name.replace(/\.pgn$/i, ''));
-    this.importStatus = `Imported ${count} game(s) from file!`;
+    this.importStatus = this.i18n.t('settings.gamesImportedFile', { count });
   }
 
   private parsePgnText(text: string): any[] {

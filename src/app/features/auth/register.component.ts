@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-container">
       <div class="auth-card">
@@ -15,28 +17,28 @@ import { AuthService } from '../../core/services/auth.service';
           <span class="logo">♞</span>
           <h1>Chess Trainer</h1>
         </div>
-        <h2>Crear Cuenta</h2>
+        <h2>{{ 'auth.createAccount' | translate }}</h2>
         <form (ngSubmit)="onSubmit()">
           <div class="field">
-            <label>Usuario</label>
+            <label>{{ 'auth.username' | translate }}</label>
             <input type="text" [(ngModel)]="username" name="username" required autocomplete="username">
           </div>
           <div class="field">
-            <label>Email</label>
+            <label>{{ 'auth.email' | translate }}</label>
             <input type="email" [(ngModel)]="email" name="email" required autocomplete="email">
           </div>
           <div class="field">
-            <label>Contraseña</label>
+            <label>{{ 'auth.password' | translate }}</label>
             <input type="password" [(ngModel)]="password" name="password" required autocomplete="new-password">
-            <span class="hint">Mínimo 8 caracteres, 1 letra y 1 número</span>
+            <span class="hint">{{ 'auth.passwordHint' | translate }}</span>
           </div>
           <p class="error" *ngIf="error">{{ error }}</p>
           <button type="submit" class="btn btn-primary full-width" [disabled]="loading">
-            {{ loading ? 'Creando...' : 'Crear cuenta' }}
+            {{ loading ? ('auth.creating' | translate) : ('auth.createBtn' | translate) }}
           </button>
         </form>
         <p class="alt-action">
-          ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+          {{ 'auth.hasAccount' | translate }} <a routerLink="/login">{{ 'auth.loginLink' | translate }}</a>
         </p>
       </div>
     </div>
@@ -104,7 +106,7 @@ export class RegisterComponent {
   error = '';
   loading = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private i18n: TranslationService) {}
 
   onSubmit(): void {
     this.error = '';
@@ -116,7 +118,7 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.detail || 'Error al crear cuenta';
+        this.error = err.error?.detail || this.i18n.t('auth.registerError');
       },
     });
   }
