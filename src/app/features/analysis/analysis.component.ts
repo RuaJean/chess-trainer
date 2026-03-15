@@ -18,6 +18,7 @@ import {
   MoveClassification,
 } from '../../core/services/game-analysis.service';
 import { Game } from '../../models/game.model';
+import { OpeningService } from '../../core/services/opening.service';
 
 @Component({
   selector: 'app-analysis',
@@ -488,6 +489,7 @@ export class AnalysisComponent implements OnInit, OnDestroy {
     private chessLogic: ChessLogicService,
     private db: DatabaseService,
     private gameAnalysis: GameAnalysisService,
+    private openingService: OpeningService,
     private route: ActivatedRoute,
   ) {}
 
@@ -724,7 +726,12 @@ export class AnalysisComponent implements OnInit, OnDestroy {
 
     const fens = this.positions.map(p => p.fen);
     const moves = this.moveHistory.map(m => ({ san: m.san, from: m.from, to: m.to }));
-    console.log(`[ANALYSIS] Starting full game analysis: ${fens.length} positions, ${moves.length} moves, depth=${this.analysisDepth}`);
+
+    // Detect opening length for book move classification
+    const sans = this.moveHistory.map(m => m.san);
+    const opening = this.openingService.detectOpening(sans);
+    const bookPly = opening?.ply || 0;
+    console.log(`[ANALYSIS] Starting full game analysis: ${fens.length} positions, ${moves.length} moves, depth=${this.analysisDepth}, bookPly=${bookPly}${opening ? ` (${opening.name})` : ''}`);
 
     this.progressSub = this.gameAnalysis.onProgress$.subscribe(p => {
       console.log(`[ANALYSIS] Progress update: move ${p.currentMove}/${p.totalMoves} (${p.percent}%)`);
@@ -734,7 +741,7 @@ export class AnalysisComponent implements OnInit, OnDestroy {
     try {
       console.log('[ANALYSIS] Calling gameAnalysis.analyzeGame...');
       this.fullAnalysis = await this.gameAnalysis.analyzeGame(
-        fens, moves, this.stockfish, Number(this.analysisDepth),
+        fens, moves, this.stockfish, Number(this.analysisDepth), bookPly,
       );
       console.log('[ANALYSIS] Full analysis complete! Applying to moves...');
       this.applyAnalysisToMoves();

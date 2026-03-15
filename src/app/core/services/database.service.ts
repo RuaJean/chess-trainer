@@ -17,11 +17,14 @@ export class DatabaseService {
       pgn: game.pgn,
       white: game.white,
       black: game.black,
+      white_elo: game.white_elo || null,
+      black_elo: game.black_elo || null,
       date: game.date,
       result: game.result,
       event: game.event,
       site: game.site || '',
       eco: game.eco,
+      opening_name: game.opening_name || '',
       source: game.source,
       collection_id: game.collection_id || null,
       pgn_headers: game.tags || {},
@@ -46,9 +49,23 @@ export class DatabaseService {
   }
 
   async getAllGames(): Promise<Game[]> {
-    return firstValueFrom(
-      this.http.get<Game[]>(`${this.api}/games/`, { params: { page_size: '1000' } })
-    );
+    return this.getAllGamesPaginated();
+  }
+
+  /** Paginate through all games for a collection (backend limits page_size to 100) */
+  async getAllGamesPaginated(collectionId?: number): Promise<Game[]> {
+    const allGames: Game[] = [];
+    let page = 1;
+    const pageSize = 100;
+    while (true) {
+      const params: any = { page, page_size: pageSize };
+      if (collectionId != null) params.collection_id = collectionId;
+      const batch = await this.getGames(params);
+      allGames.push(...batch);
+      if (batch.length < pageSize) break;
+      page++;
+    }
+    return allGames;
   }
 
   async getGames(params: {
@@ -58,6 +75,7 @@ export class DatabaseService {
     eco?: string;
     is_favorite?: boolean;
     tag_id?: number;
+    ordering?: string;
     page?: number;
     page_size?: number;
   } = {}): Promise<Game[]> {
@@ -68,6 +86,7 @@ export class DatabaseService {
     if (params.eco) httpParams = httpParams.set('eco', params.eco);
     if (params.is_favorite != null) httpParams = httpParams.set('is_favorite', params.is_favorite);
     if (params.tag_id != null) httpParams = httpParams.set('tag_id', params.tag_id);
+    if (params.ordering) httpParams = httpParams.set('ordering', params.ordering);
     if (params.page) httpParams = httpParams.set('page', params.page);
     if (params.page_size) httpParams = httpParams.set('page_size', params.page_size);
 
@@ -107,23 +126,32 @@ export class DatabaseService {
     );
   }
 
-  async importGames(games: Omit<Game, 'id'>[], collectionName?: string): Promise<number> {
-    const body = {
+  async importGames(games: Omit<Game, 'id'>[], collectionName?: string, collectionId?: number): Promise<number> {
+    const body: any = {
       games: games.map(g => ({
         pgn: g.pgn,
         white: g.white,
         black: g.black,
+        white_elo: g.white_elo || null,
+        black_elo: g.black_elo || null,
         date: g.date,
         result: g.result,
         event: g.event,
         site: g.site || '',
         eco: g.eco,
+        opening_name: g.opening_name || '',
         source: g.source,
+        collection_id: collectionId || g.collection_id || null,
         pgn_headers: g.tags || {},
       })),
-      collection_name: collectionName || null,
       collection_type: 'import',
     };
+    // When collection_id is provided, use it directly (no collection_name to avoid creating duplicates)
+    if (collectionId) {
+      body.collection_id = collectionId;
+    } else {
+      body.collection_name = collectionName || null;
+    }
     const created = await firstValueFrom(
       this.http.post<Game[]>(`${this.api}/games/import`, body)
     );

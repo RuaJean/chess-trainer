@@ -36,6 +36,7 @@ async def list_games(
     eco: str | None = None,
     is_favorite: bool | None = None,
     tag_id: int | None = None,
+    ordering: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     user: User = Depends(get_current_user),
@@ -67,7 +68,25 @@ async def list_games(
             | Game.opening_name.ilike(q)
         )
 
-    stmt = stmt.order_by(Game.created_at.desc())
+    # Ordering: prefix with - for descending (e.g. "-date", "white_elo")
+    order_map = {
+        "date": Game.date,
+        "created_at": Game.created_at,
+        "white_elo": Game.white_elo,
+        "black_elo": Game.black_elo,
+        "result": Game.result,
+        "eco": Game.eco,
+    }
+    if ordering:
+        desc = ordering.startswith("-")
+        field = ordering.lstrip("-")
+        col = order_map.get(field)
+        if col is not None:
+            stmt = stmt.order_by(col.desc() if desc else col.asc())
+        else:
+            stmt = stmt.order_by(Game.created_at.desc())
+    else:
+        stmt = stmt.order_by(Game.created_at.desc())
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
 
     rows = await db.execute(stmt)

@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Chess } from 'chess.js';
 import { Game } from '../../models/game.model';
+import { OpeningService } from './opening.service';
 
 @Injectable({ providedIn: 'root' })
 export class PgnService {
+
+  constructor(private openingService: OpeningService) {}
 
   parsePgn(text: string): Game[] {
     const games: Game[] = [];
@@ -49,15 +52,31 @@ export class PgnService {
       if (v != null) headers[k] = v;
     }
 
+    let eco = headers['ECO'] || '';
+    let openingName = headers['Opening'] || '';
+
+    // Auto-detect opening if not present in PGN headers
+    if (!eco || !openingName) {
+      const history = chess.history();
+      const detected = this.openingService.detectOpening(history);
+      if (detected) {
+        if (!eco) eco = detected.eco;
+        if (!openingName) openingName = detected.name;
+      }
+    }
+
     return {
       pgn: chess.pgn(),
       white: headers['White'] || 'Unknown',
       black: headers['Black'] || 'Unknown',
+      white_elo: headers['WhiteElo'] ? parseInt(headers['WhiteElo'], 10) : null,
+      black_elo: headers['BlackElo'] ? parseInt(headers['BlackElo'], 10) : null,
       date: headers['Date'] || new Date().toISOString().split('T')[0],
       result: headers['Result'] || '*',
       event: headers['Event'] || '',
       site: headers['Site'] || '',
-      eco: headers['ECO'] || '',
+      eco,
+      opening_name: openingName,
       fen: headers['FEN'] || undefined,
       tags: headers,
       source: 'import',

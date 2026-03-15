@@ -105,6 +105,7 @@ export class GameAnalysisService {
     moves: { san: string; from: string; to: string }[],
     stockfish: StockfishService,
     depth: number = 12,
+    bookPly: number = 0,
   ): Promise<FullAnalysisResult> {
     this.aborted = false;
     const totalMoves = moves.length;
@@ -170,8 +171,9 @@ export class GameAnalysisService {
       const cappedAfter = Math.max(-1000, Math.min(1000, cpAfter));
       const cpLoss = Math.max(0, cappedBefore - cappedAfter);
 
-      const classification = classifyMove(winDrop);
-      const acc = moveAccuracy(winBefore, winAfter);
+      const isBook = i < bookPly;
+      const classification = isBook ? 'book' : classifyMove(winDrop);
+      const acc = isBook ? 100 : moveAccuracy(winBefore, winAfter);
 
       moveAnalyses.push({
         moveIndex: i,
@@ -185,25 +187,27 @@ export class GameAnalysisService {
         winDrop,
         classification,
         accuracy: acc,
-        cpLoss,
+        cpLoss: isBook ? 0 : cpLoss,
       });
 
       evalHistory.push(evalAfter.winPercent);
     }
 
-    // Compute aggregate stats
+    // Compute aggregate stats (exclude book moves from ACPL and accuracy)
     const whiteMoves = moveAnalyses.filter(m => m.color === 'w');
     const blackMoves = moveAnalyses.filter(m => m.color === 'b');
+    const whiteNonBook = whiteMoves.filter(m => m.classification !== 'book');
+    const blackNonBook = blackMoves.filter(m => m.classification !== 'book');
 
-    const whiteACPL = whiteMoves.length > 0
-      ? whiteMoves.reduce((s, m) => s + m.cpLoss, 0) / whiteMoves.length
+    const whiteACPL = whiteNonBook.length > 0
+      ? whiteNonBook.reduce((s, m) => s + m.cpLoss, 0) / whiteNonBook.length
       : 0;
-    const blackACPL = blackMoves.length > 0
-      ? blackMoves.reduce((s, m) => s + m.cpLoss, 0) / blackMoves.length
+    const blackACPL = blackNonBook.length > 0
+      ? blackNonBook.reduce((s, m) => s + m.cpLoss, 0) / blackNonBook.length
       : 0;
 
-    const whiteAccuracy = this.computeGameAccuracy(whiteMoves);
-    const blackAccuracy = this.computeGameAccuracy(blackMoves);
+    const whiteAccuracy = this.computeGameAccuracy(whiteNonBook);
+    const blackAccuracy = this.computeGameAccuracy(blackNonBook);
 
     const result: FullAnalysisResult = {
       moves: moveAnalyses,
@@ -211,12 +215,12 @@ export class GameAnalysisService {
       blackAccuracy,
       whiteACPL: Math.round(whiteACPL),
       blackACPL: Math.round(blackACPL),
-      whiteInaccuracies: whiteMoves.filter(m => m.classification === 'inaccuracy').length,
-      whiteMistakes: whiteMoves.filter(m => m.classification === 'mistake').length,
-      whiteBlunders: whiteMoves.filter(m => m.classification === 'blunder').length,
-      blackInaccuracies: blackMoves.filter(m => m.classification === 'inaccuracy').length,
-      blackMistakes: blackMoves.filter(m => m.classification === 'mistake').length,
-      blackBlunders: blackMoves.filter(m => m.classification === 'blunder').length,
+      whiteInaccuracies: whiteNonBook.filter(m => m.classification === 'inaccuracy').length,
+      whiteMistakes: whiteNonBook.filter(m => m.classification === 'mistake').length,
+      whiteBlunders: whiteNonBook.filter(m => m.classification === 'blunder').length,
+      blackInaccuracies: blackNonBook.filter(m => m.classification === 'inaccuracy').length,
+      blackMistakes: blackNonBook.filter(m => m.classification === 'mistake').length,
+      blackBlunders: blackNonBook.filter(m => m.classification === 'blunder').length,
       evalHistory,
     };
 
